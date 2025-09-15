@@ -28,8 +28,18 @@ const userSchema = new mongoose.Schema({
         type: String,
        enum: ["customer","admin"],
     default:"customer"
-    }
+    },
+    
+   otp:{
+    type:Number,
+    select:false
+   },
 
+   isOtpVerified:{
+    type:Boolean,
+    default:false,
+    select:false
+   }
 },{
     timestamps:true
 })

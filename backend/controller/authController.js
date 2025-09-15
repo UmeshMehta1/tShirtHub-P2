@@ -1,5 +1,6 @@
 const User = require("../model/userModel")
 const bcrypt = require("bcryptjs")
+const sendEmail = require("../service/sendEmail")
 
 exports.registerUser= async(req,res)=>{
     // console.log("hello")
@@ -80,11 +81,76 @@ exports.loginUser = async(req,res)=>{
         })
     }
 
+}
 
 
+exports.forgotPassword = async(req, res)=>{
+    const {email} = req.body
+     console.log("hello")
+    if(!email){
+        return res.status(400).json({
+            message:"please provide email"
+        })
+    }
+  
+    const userExist = await User.find({userEmail:email})
+
+    if(userExist.length===0){
+        return res.status(400).json({
+            message:"user email is not register"
+        })
+    }
 
 
-   
-   
+   const otp = Math.floor(1000+Math.random()*9000)
+   console.log(otp)
 
+   userExist[0].otp=otp
+    await userExist[0].save()
+
+   await sendEmail({
+    email: email,
+    subject:"verification otp",
+    message:"your otp is: "+otp
+
+   })
+
+   res.status(200).json({
+    message: "OTP send successfully",
+   })
+    
+}
+
+exports.verifyOtp = async(req,res)=>{
+    const {email, otp} = req.body
+
+    if(!email || !otp){
+        return res.status(400).json({
+            message:"email and otp must be provide"
+        })
+    }
+
+    const userExists = await User.find({userEmail:email}).select("+otp +isOtpVerified")
+    
+    // console.log(userExist)
+
+    if(userExists.length===0){
+        return res.status(400).json({
+            message:"email is not regster"
+        })
+    }
+
+    if(userExists[0].otp !==otp){
+        return res.status(404).json({
+            message:"Inviled Otp"
+        })
+    }else{
+        userExists[0].otp = undefined,
+        userExists[0].isOtpVerified= true,
+        await userExists[0].save()
+
+        res.status(200).json({
+            message:"otp is verify"
+        })
+    }
 }
