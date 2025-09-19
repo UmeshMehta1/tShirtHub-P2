@@ -48,7 +48,7 @@ if(userFound.length>0){
 
 }
 
-
+//login user
 
 exports.loginUser = async(req,res)=>{
     const {email, password} = req.body
@@ -83,6 +83,7 @@ exports.loginUser = async(req,res)=>{
 
 }
 
+//forgot password
 
 exports.forgotPassword = async(req, res)=>{
     const {email} = req.body
@@ -106,6 +107,7 @@ exports.forgotPassword = async(req, res)=>{
    console.log(otp)
 
    userExist[0].otp=otp
+   userExist[0].isOtpVerified= false
     await userExist[0].save()
 
    await sendEmail({
@@ -113,14 +115,14 @@ exports.forgotPassword = async(req, res)=>{
     subject:"verification otp",
     message:"your otp is: "+otp
 
-   })
+   })[[[]]]
 
    res.status(200).json({
     message: "OTP send successfully",
    })
     
 }
-
+//verifyotp
 exports.verifyOtp = async(req,res)=>{
     const {email, otp} = req.body
 
