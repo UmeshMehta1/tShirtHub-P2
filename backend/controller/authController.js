@@ -72,7 +72,7 @@ exports.loginUser = async(req,res)=>{
 
 
     if(isMatched){
-        const token = jwt.sign({id:userFound[0]._id},"slkjlsldks",{
+        const token = jwt.sign({id:userFound[0]._id},"helloWorld",{
             expiresIn:"4534535s"
         })
 

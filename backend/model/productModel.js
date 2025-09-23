@@ -20,7 +20,8 @@ const userSchema = new mongoose.Schema({
     productStatus:{
         type:String,
         enum:["available","unavilable"]
-    }
+    },
+    productImage:String
 },{
     timestamps:true
 })

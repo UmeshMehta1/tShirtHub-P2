@@ -1,6 +1,16 @@
 const Product = require("../../model/productModel")
 
 exports.createProduct = async (req, res)=>{
+  console.log(req.file)
+  const filename=req.file.path;
+  // // let filepath =fi
+
+  // if(!filename){
+  //    filepath="./helloimage.jpg"
+  //   return
+  // }else{
+  //     filepath= filename
+  // }
     
     // console.log(req.body)
     const {productName, productDescription, productPrice, productStatus,productStockQty}=req.body
@@ -18,6 +28,7 @@ exports.createProduct = async (req, res)=>{
            productStockQty,
            productStatus,
            productPrice,
+           productImage:filename
   })
 
     res.status(201).json({
