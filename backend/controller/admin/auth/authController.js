@@ -1,6 +1,6 @@
-const User = require("../model/userModel")
+const User = require("../../../model/userModel")
 const bcrypt = require("bcryptjs")
-const sendEmail = require("../service/sendEmail")
+const sendEmail = require("../../../service/sendEmail")
 const jwt = require("jsonwebtoken")
 
 exports.registerUser= async(req,res)=>{
@@ -124,7 +124,7 @@ exports.forgotPassword = async(req, res)=>{
     subject:"verification otp",
     message:"your otp is: "+otp
 
-   })[[[]]]
+   })
 
    res.status(200).json({
     message: "OTP send successfully",

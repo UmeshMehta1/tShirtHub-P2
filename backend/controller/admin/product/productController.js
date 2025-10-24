@@ -1,5 +1,6 @@
-const Product = require("../../model/productModel")
-const fs= require("fs")
+const Product = require("../../../model/productModel")
+const fs= require("fs");
+const Review = require("../../../model/reviewmodel");
 
 exports.createProduct = async (req, res)=>{
  
@@ -45,6 +46,9 @@ exports.createProduct = async (req, res)=>{
 
 
 exports.getProducts = async(req, res)=>{
+  
+  const productReviews = await Review.find({productId :id }).populate("userId")
+
   const products = await Product.find()
 
   if(products.length===0){
@@ -54,7 +58,8 @@ exports.getProducts = async(req, res)=>{
   }else{
     res.status(200).json({
       message:"product fetch successfully",
-      data:products
+      data:products,
+      review:productReviews
     })
   }
 
@@ -72,6 +77,8 @@ exports.getsingleproduct = async(req,res)=>{
 
  const product = await Product.find({_id:id})
 
+ const productReviews = await Review.find({productId:id}).populate("userId")
+
  if(product==0){
    return res.status(400).json({
       message:"product is not found with this id"
@@ -79,11 +86,11 @@ exports.getsingleproduct = async(req,res)=>{
  }
   return res.status(200).json({
     message:"single product is fetch successfully",
-    data:product
+    data:product,
+    productReviews
   })
 
 }
-
 
 exports.deleteproduct = async(req, res)=>{
    const {id}= req.params
@@ -129,7 +136,6 @@ exports.editproduct = async(req, res)=>{
             message:"please provide productName, productDescription, productPrice, productStatus,productStockQty"
         })
     }
-
 
     const predata = await Product.findById(id)
     const predataimage = predata.productImage

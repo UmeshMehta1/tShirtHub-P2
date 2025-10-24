@@ -1,4 +1,4 @@
-const { createProduct, getProducts, getsingleproduct, deleteproduct, editproduct } = require("../controller/admin/productController")
+const { createProduct, getProducts, getsingleproduct, deleteproduct, editproduct } = require("../controller/admin/product/productController")
 const isAutenticated = require("../middleware/isAuthenticated")
 const restrictTo = require("../middleware/restrictTo")
 const {multer, storage}= require("../middleware/multerConfig")

@@ -21,7 +21,11 @@ const userSchema = new mongoose.Schema({
         type:String,
         enum:["available","unavilable"]
     },
-    productImage:String
+    qantity:{
+        type:Number
+    },
+    productImage:String,
+    
 },{
     timestamps:true
 })

@@ -1,4 +1,5 @@
 const mongoose = require("mongoose")
+const Schema = mongoose.Schema
 
 const userSchema = new mongoose.Schema({
     userName:{
@@ -32,6 +33,7 @@ const userSchema = new mongoose.Schema({
     
    otp:{
     type:Number,
+    default: null,
     select:false
    },
 
@@ -39,7 +41,9 @@ const userSchema = new mongoose.Schema({
     type:Boolean,
     default:false,
     select:false
-   }
+   },
+
+   cart:[{type: Schema.Types.ObjectId, ref:"Product"}]
 },{
     timestamps:true
 })
