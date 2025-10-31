@@ -4,10 +4,16 @@ const { adminSeeder } = require("../adminSeeded")
 
 
 exports.datbaseConnect = async (URI)=>{
- mongoose.connect(URI)
-    console.log("database is connect successfully")
-    
-    adminSeeder()
-   
-
+    try {
+        await mongoose.connect(URI, {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        })
+        console.log("database is connect successfully")
+        
+        await adminSeeder()
+    } catch (error) {
+        console.error("Database connection error:", error.message)
+        process.exit(1)
+    }
 }

@@ -18,19 +18,19 @@ exports.addToCart = async(req, res)=>{
             message:"product is not found"
         })
     }
-
+    
     const user = await User.findById(userId)
      
-    const existCartItem = user.cart.find((item)=>item.product.equals(productId))
+    const existCartItem = await user.cart.find((item)=>item.product.equals(productId))
 
-    // if(existCartItem){
-    //     existCartItem.quantity +=1
-    // }else{
-    //     user.cart.push({
-    //         product:productId,
-    //         quantity:1
-    //     })
-    // }
+    if(existCartItem){
+        existCartItem.quantity +=1
+    }else{
+        user.cart.push({
+            product:productId,
+            quantity:1
+        })
+    }
 
     await user.save()
     const updateUser = User.findById(userId).populate("cart.product")

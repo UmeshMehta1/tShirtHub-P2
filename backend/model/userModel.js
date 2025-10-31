@@ -43,7 +43,12 @@ const userSchema = new mongoose.Schema({
     select:false
    },
 
-   cart:[{type: Schema.Types.ObjectId, ref:"Product"}]
+  cart: [
+  {
+    product: { type: mongoose.Schema.Types.ObjectId, ref: "Product" },
+    quantity: { type: Number, default: 1 },
+  },
+]
 },{
     timestamps:true
 })

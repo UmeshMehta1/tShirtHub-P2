@@ -46,9 +46,7 @@ exports.createProduct = async (req, res)=>{
 
 
 exports.getProducts = async(req, res)=>{
-  
-  const productReviews = await Review.find({productId :id }).populate("userId")
-
+  const productReviews = await Review.find().populate("userId")
   const products = await Product.find()
 
   if(products.length===0){
