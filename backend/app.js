@@ -23,6 +23,9 @@ app.use("/api/review/",reviewRoute)
 app.use("/api/cart/",cartRoute )
 app.use("/api/order",userOrderRoute)
 app.use("/api/admin/order", adminOrderRoute)
+app.use("/api/payment", require("./routes/payment.Route"))
+
+
 
 // Start server only after database connection is established
 const startServer = async () => {
@@ -32,5 +35,6 @@ const startServer = async () => {
         console.log("server is starting port number: 3000")
     })
 }
+
 
 startServer()
