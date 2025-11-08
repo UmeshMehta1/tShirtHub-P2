@@ -6,17 +6,7 @@ exports.createProduct = async (req, res)=>{
  
     
   console.log(req.file)
-  const filename=req.file;
-  // // let filepath =fi
-
-  // if(!filename){
-  //    filepath="./helloimage.jpg"
-  //   return
-  // }else{
-  //     filepath= filename
-  // }
     
-    // console.log(req.body)
     const {productName, productDescription, productPrice, productStatus,productStockQty}=req.body
     
     if(!productName || !productDescription || !productPrice || !productStatus || !productStockQty){
@@ -32,7 +22,7 @@ exports.createProduct = async (req, res)=>{
            productStockQty,
            productStatus,
            productPrice,
-           productImage:filename
+           productImage: req.file ? req.file.filename : null
   })
 
     res.status(201).json({
@@ -109,13 +99,15 @@ exports.deleteproduct = async(req, res)=>{
 
    const preproductimage = prevdata.productImage
 
-   fs.unlink("./upload"+ preproductimage,(err)=>{
-    if(err){
-      console.log("error deleting file",err)
-    }else{
-      console.log("file delete successfully")
-    }
-   } )
+   if(preproductimage){
+     fs.unlink("./upload/" + preproductimage,(err)=>{
+      if(err){
+        console.log("error deleting file",err)
+      }else{
+        console.log("file delete successfully")
+      }
+     } )
+   }
 
    await Product.findByIdAndDelete(id)
    res.status(200).json({
@@ -138,10 +130,10 @@ exports.editproduct = async(req, res)=>{
     const predata = await Product.findById(id)
     const predataimage = predata.productImage
 
-       if(req.file && req.file.filename){
-        fs.unlink("./upload"+predataimage, (err)=>{
+       if(req.file && req.file.filename && predataimage){
+        fs.unlink("./upload/" + predataimage, (err)=>{
           if(err){
-            conolse.log("error in file", err)
+            console.log("error in file", err)
           }else{
             console.log("product image delete succesfully")
           }

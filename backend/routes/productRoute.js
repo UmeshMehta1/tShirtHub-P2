@@ -10,7 +10,7 @@ const router= require("express").Router()
 router.route("/").post(isAutenticated,restrictTo("admin"),upload.single("productImage"), catchAsync(createProduct))
 
 router.route("/:id").delete(isAutenticated,restrictTo("admin"),catchAsync(deleteproduct))
-router.route("/:id").patch(isAutenticated,restrictTo("admin"),catchAsync(editproduct))
+router.route("/:id").patch(isAutenticated,restrictTo("admin"),upload.single("productImage"), catchAsync(editproduct))
 
 
 router.route("/getproducts").get(catchAsync(getProducts))
