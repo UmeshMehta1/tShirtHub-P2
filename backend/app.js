@@ -7,12 +7,22 @@ const reviewRoute = require("./routes/review.route")
 const cartRoute = require("./routes/cartRoute")
 const userOrderRoute = require("./routes/userorderRoute")
 const adminOrderRoute = require("./routes/adminorderRoute")
+const cors = require("cors")
 require("dotenv").config()
 
 const app = express();
 
+app.use(cors(
+    {
+        origin:"*"
+    }
+))
+
+
 app.use(express.json())
 app.use(express.urlencoded())
+
+
 
 // http://localhost:3000/api/auth/register
 
@@ -25,7 +35,7 @@ app.use("/api/order",userOrderRoute)
 app.use("/api/admin/order", adminOrderRoute)
 app.use("/api/payment", require("./routes/payment.Route"))
 
-
+//http://localhost:3000/api/paymen
 
 // Start server only after database connection is established
 const startServer = async () => {

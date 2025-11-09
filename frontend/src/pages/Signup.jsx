@@ -1,7 +1,18 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import {useDispatch, useSelector} from "react-redux"
+import { registerUser } from '../store/authSlice'
+import { STATUSES } from '../statues/statuses'
+
+
+import {useNavigate} from 'react-router-dom'
 
 const Signup = () => {
+  
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const {status}= useSelector((state)=>state.auth)
+
   const [formData, setFormData] = useState({
     username: '',
     email: '',
@@ -19,7 +30,17 @@ const Signup = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     // Logic will be added here
+    dispatch(registerUser(formData))
   }
+
+  // react to async register status changes
+  useEffect(() => {
+    if (status === STATUSES.SUCCESS) {
+      navigate('/login')
+    } else if (status === STATUSES.ERROR) {
+      alert('Something went wrong')
+    }
+  }, [status, navigate])
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -183,4 +204,3 @@ const Signup = () => {
 }
 
 export default Signup
-

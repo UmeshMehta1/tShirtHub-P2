@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import React, { useState,useEffect } from 'react'
 import ProductCard from '../components/ProductCard'
+import axios from "axios"
 
 const Products = () => {
   const [searchTerm, setSearchTerm] = useState('')
@@ -8,87 +9,29 @@ const Products = () => {
   const [priceRange, setPriceRange] = useState('all')
 
   // Sample products
-  const allProducts = [
-    {
-      id: 1,
-      name: 'Classic White T-Shirt',
-      price: '29.99',
-      originalPrice: '39.99',
-      discount: 25,
-      category: 'casual',
-      image: 'https://via.placeholder.com/400x400',
-      rating: 5,
-    },
-    {
-      id: 2,
-      name: 'Black Premium Tee',
-      price: '34.99',
-      category: 'premium',
-      image: 'https://via.placeholder.com/400x400',
-      rating: 4,
-    },
-    {
-      id: 3,
-      name: 'Blue Casual Shirt',
-      price: '27.99',
-      originalPrice: '35.99',
-      discount: 22,
-      category: 'casual',
-      image: 'https://via.placeholder.com/400x400',
-      rating: 5,
-    },
-    {
-      id: 4,
-      name: 'Gray Comfort Fit',
-      price: '31.99',
-      category: 'comfort',
-      image: 'https://via.placeholder.com/400x400',
-      rating: 4,
-    },
-    {
-      id: 5,
-      name: 'Red Sporty Tee',
-      price: '36.99',
-      category: 'sports',
-      image: 'https://via.placeholder.com/400x400',
-      rating: 5,
-    },
-    {
-      id: 6,
-      name: 'Green Eco-Friendly',
-      price: '39.99',
-      category: 'eco',
-      image: 'https://via.placeholder.com/400x400',
-      rating: 4,
-    },
-    {
-      id: 7,
-      name: 'Navy Blue Classic',
-      price: '28.99',
-      originalPrice: '38.99',
-      discount: 26,
-      category: 'casual',
-      image: 'https://via.placeholder.com/400x400',
-      rating: 5,
-    },
-    {
-      id: 8,
-      name: 'Orange Vibrant Tee',
-      price: '32.99',
-      category: 'casual',
-      image: 'https://via.placeholder.com/400x400',
-      rating: 4,
-    },
-  ]
+  const [products, setProducts] = useState([])
 
-  const categories = [
-    { value: 'all', label: 'All Categories' },
-    { value: 'casual', label: 'Casual' },
-    { value: 'premium', label: 'Premium' },
-    { value: 'sports', label: 'Sports' },
-    { value: 'comfort', label: 'Comfort' },
-    { value: 'eco', label: 'Eco-Friendly' },
-  ]
+const fetchProduct = async () => {
+  try {
+    const response = await axios.get(
+      "http://localhost:3000/api/admin/product/getproducts"
+    )
+
+    if (response.status === 200) {
+      setProducts(response.data.data || [])
+    }
+  } catch (err) {
+    console.error('Failed to fetch products', err)
+    setProducts([])
+  }
+}
+
+console.log(products)
+
+
+useEffect(()=>{
+    fetchProduct()
+},[])
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -132,11 +75,11 @@ const Products = () => {
               onChange={(e) => setSelectedCategory(e.target.value)}
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
             >
-              {categories.map((cat) => (
+              {/* {categories.map((cat) => (
                 <option key={cat.value} value={cat.value}>
                   {cat.label}
                 </option>
-              ))}
+              ))} */}
             </select>
           </div>
 
@@ -194,9 +137,14 @@ const Products = () => {
 
       {/* Products Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {allProducts.map((product) => (
-          <ProductCard key={product.id} product={product} />
-        ))}
+        {products.length === 0 ? (
+          <p className="col-span-full text-center text-gray-500">No products found.</p>
+        ) : (
+          products.map((product) => (
+            <ProductCard key={product._id || product.id} product={product} />
+          ))
+        )}
+
       </div>
 
       {/* Pagination */}

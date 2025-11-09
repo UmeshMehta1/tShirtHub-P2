@@ -13,9 +13,15 @@ import Review from './pages/Review'
 import Orders from './pages/Orders'
 import AllOrders from './pages/AllOrders'
 import CreateProduct from './pages/CreateProduct'
+import {Provider}from "react-redux"
+import store from "./store/store"
 
 function App() {
   return (
+  
+    <>
+    <Provider store={store}>
+
     <Router>
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -37,6 +43,10 @@ function App() {
         <Footer />
       </div>
     </Router>
+
+    </Provider>
+
+    </>
   )
 }
 
