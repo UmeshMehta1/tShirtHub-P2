@@ -30,12 +30,20 @@ const Signup = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     // Logic will be added here
+    // Basic client-side validation: ensure phone number has at least 10 digits
+    const digits = (formData.userNumber || '').toString().replace(/\D/g, '')
+    if (digits.length < 10) {
+      alert('Please enter a valid phone number with at least 10 digits.')
+      return
+    }
+
     dispatch(registerUser(formData))
   }
 
   // react to async register status changes
   useEffect(() => {
     if (status === STATUSES.SUCCESS) {
+      alert("register successfully")
       navigate('/login')
     } else if (status === STATUSES.ERROR) {
       alert('Something went wrong')

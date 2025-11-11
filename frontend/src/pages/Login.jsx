@@ -1,7 +1,11 @@
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from "react-router-dom"
+import {useDispatch, useSelector} from "react-redux"
+import { loginUser } from '../store/authSlice'
 
 const Login = () => {
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -14,11 +18,21 @@ const Login = () => {
     })
   }
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    // Logic will be added here
-  }
+  const {token, status, isAuthenticated}= useSelector((state)=>state.auth)
 
+
+  // Handle submit - students will implement with Redux/API
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    try{
+        await dispatch(loginUser(formData))
+        alert("login successfully")
+        navigate("/")
+    }catch(error){
+      console.error("login error", error)
+    }
+  }
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
@@ -36,6 +50,14 @@ const Login = () => {
             </Link>
           </p>
         </div>
+
+        {/* Error Message - students will implement with Redux state */}
+        {/* {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+            {error}
+          </div>
+        )} */}
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
@@ -101,9 +123,10 @@ const Login = () => {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+           
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Sign in
+            Sign in
             </button>
           </div>
         </form>

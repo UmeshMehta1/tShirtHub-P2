@@ -141,7 +141,10 @@ useEffect(()=>{
           <p className="col-span-full text-center text-gray-500">No products found.</p>
         ) : (
           products.map((product) => (
-            <ProductCard key={product._id || product.id} product={product} />
+            <ProductCard 
+              key={product._id || product.id} 
+              product={product}
+            />
           ))
         )}
 

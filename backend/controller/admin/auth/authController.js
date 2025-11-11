@@ -23,29 +23,39 @@ if(!username || !email || !userNumber || !password ){
         })
     }
 
-//check if that email alread exist or not.
- 
-const userFound = await User.find({userEmail:email})
+    // check if that email already exist or not.
+    try {
+        const userFound = await User.find({userEmail:email})
 
-if(userFound.length>0){
-    return res.status(400).json({
-        message:"user with that email already registered",
-        data:[]
-    })
-}
+        if(userFound.length>0){
+            return res.status(400).json({
+                message:"user with that email already registered",
+                data:[]
+            })
+        }
 
+        const userData = await User.create({
+             userName:username,
+             userEmail: email,
+             userNumber: userNumber,
+             userPassword: bcrypt.hashSync(password,8)
+        })
 
-    const userData = await User.create({
-         userName:username,
-         userEmail: email,
-         userNumber: userNumber,
-         userPassword: bcrypt.hashSync(password,8)
-    })
-
-    res.status(201).json({
-        message:"registration successully",
-        data:userData
-    })
+        return res.status(201).json({
+            message:"registration successully",
+            data:userData
+        })
+    } catch (err) {
+        // If mongoose validation error, return 400 with details
+        if (err.name === 'ValidationError') {
+            // collect messages
+            const messages = Object.values(err.errors).map(e => e.message)
+            return res.status(400).json({ message: messages.join('; ') })
+        }
+        // otherwise return generic 500 with message
+        console.error('registerUser error:', err)
+        return res.status(500).json({ message: 'Internal server error' })
+    }
 
 }
 

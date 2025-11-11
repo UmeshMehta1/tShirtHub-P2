@@ -1,36 +1,48 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 const Cart = () => {
-  // Sample cart items
-  const cartItems = [
+  // Sample cart items for UI display (students will replace this with Redux/API)
+  const [cartItems, setCartItems] = useState([
     {
-      id: 1,
-      name: 'Classic White T-Shirt',
-      price: 29.99,
+      product: {
+        _id: '1',
+        productName: 'Classic White T-Shirt',
+        productPrice: 29.99,
+        productImage: 'https://via.placeholder.com/150x150',
+      },
       quantity: 2,
-      size: 'M',
-      color: 'White',
-      image: 'https://via.placeholder.com/150x150',
     },
     {
-      id: 2,
-      name: 'Black Premium Tee',
-      price: 34.99,
+      product: {
+        _id: '2',
+        productName: 'Black Premium Tee',
+        productPrice: 34.99,
+        productImage: 'https://via.placeholder.com/150x150',
+      },
       quantity: 1,
-      size: 'L',
-      color: 'Black',
-      image: 'https://via.placeholder.com/150x150',
     },
-  ]
+  ])
 
+  // Calculate totals
   const subtotal = cartItems.reduce(
-    (sum, item) => sum + item.price * item.quantity,
+    (total, item) => total + (item.product?.productPrice || 0) * item.quantity,
     0
   )
   const shipping = 5.99
   const tax = subtotal * 0.1
   const total = subtotal + shipping + tax
+
+  // Handler functions - students will implement these with Redux/API
+  const handleQuantityChange = (productId, newQuantity) => {
+    // Logic will be added here by students
+    console.log('Update quantity:', productId, newQuantity)
+  }
+
+  const handleDelete = (productId) => {
+    // Logic will be added here by students
+    console.log('Delete product:', productId)
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -69,11 +81,11 @@ const Cart = () => {
             <div className="bg-white rounded-lg shadow-md overflow-hidden">
               <div className="divide-y divide-gray-200">
                 {cartItems.map((item) => (
-                  <div key={item.id} className="p-6 flex flex-col sm:flex-row">
+                  <div key={item.product?._id || item._id} className="p-6 flex flex-col sm:flex-row">
                     <div className="flex-shrink-0">
                       <img
-                        src={item.image}
-                        alt={item.name}
+                        src={item.product?.productImage || 'https://via.placeholder.com/150x150'}
+                        alt={item.product?.productName || 'Product'}
                         className="h-32 w-32 object-cover rounded-md"
                       />
                     </div>
@@ -81,13 +93,16 @@ const Cart = () => {
                       <div className="flex justify-between">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {item.name}
+                            {item.product?.productName || 'Product Name'}
                           </h3>
                           <p className="mt-1 text-sm text-gray-500">
-                            Size: {item.size} | Color: {item.color}
+                            Price: ${item.product?.productPrice || 0}
                           </p>
                         </div>
-                        <button className="text-red-600 hover:text-red-800">
+                        <button 
+                          onClick={() => handleDelete(item.product?._id)} 
+                          className="text-red-600 hover:text-red-800"
+                        >
                           <svg
                             className="h-6 w-6"
                             fill="none"
@@ -105,18 +120,24 @@ const Cart = () => {
                       </div>
                       <div className="mt-4 flex items-center justify-between">
                         <div className="flex items-center space-x-3">
-                          <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50">
+                          <button 
+                            className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50" 
+                            onClick={() => handleQuantityChange(item.product?._id, item.quantity - 1)}
+                          >
                             -
                           </button>
                           <span className="text-lg font-medium">
                             {item.quantity}
                           </span>
-                          <button className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50">
+                          <button 
+                            className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
+                            onClick={() => handleQuantityChange(item.product?._id, item.quantity + 1)}
+                          >
                             +
                           </button>
                         </div>
                         <div className="text-lg font-semibold text-gray-900">
-                          ${(item.price * item.quantity).toFixed(2)}
+                          ${((item.product?.productPrice || 0) * item.quantity).toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -124,7 +145,6 @@ const Cart = () => {
                 ))}
               </div>
             </div>
-
             <div className="mt-6">
               <Link
                 to="/products"
