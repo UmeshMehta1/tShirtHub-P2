@@ -1,6 +1,6 @@
 import {createSlice} from  "@reduxjs/toolkit"
 import {STATUSES} from "../statues/statuses"
-import { API } from '../http'
+import { API } from '../http/index'
 
 const authSlice = createSlice({
     name:"auth",
@@ -50,35 +50,58 @@ export const {setUser, setStatus, setToken, logOut, clearError, setError}= authS
 export default authSlice.reducer
 
 export function registerUser(data){
-         
     return async function registerUserThunk(dispatch){
-         dispatch(setStatus(STATUSES.LOADING))
+        dispatch(setStatus(STATUSES.LOADING))
+        dispatch(clearError())
         
-
-    try{
-        const response = await API.post("/auth/register", data)
-        // if backend returns created user, save it in state
-        if (response && response.data && response.data.data) {
-            dispatch(setUser(response.data.data))
+        // Validate input
+        if (!data.username || !data.email || !data.userNumber || !data.password) {
+            const errorMessage = "All fields are required"
+            dispatch(setError(errorMessage))
+            dispatch(setStatus(STATUSES.ERROR))
+            return { success: false, error: errorMessage }
         }
-        dispatch(setStatus(STATUSES.SUCCESS))
 
-    } catch (e) {
-        // Log full error details to help debugging (network / server response)
-        console.error('registerUser error:', e)
-        if (e.response) {
-            console.error('server response:', e.response.status, e.response.data)
-            // show backend message if available
-            if (e.response.data && e.response.data.message) {
-                alert(e.response.data.message)
+        try {
+            const response = await API.post("/auth/register", data)
+            
+            // Check if response is successful and has data
+            if (response && response.status === 201 && response.data) {
+                // if backend returns created user, save it in state
+                if (response.data.data) {
+                    dispatch(setUser(response.data.data))
+                }
+                dispatch(setStatus(STATUSES.SUCCESS))
+                return { success: true, data: response.data }
+            } else {
+                // Response doesn't have expected data
+                const errorMessage = response.data?.message || "Registration failed. Invalid response from server."
+                dispatch(setError(errorMessage))
+                dispatch(setStatus(STATUSES.ERROR))
+                return { success: false, error: errorMessage }
             }
-        } else if (e.request) {
-            console.error('no response received:', e.request)
+        } catch (e) {
+            // Log full error details to help debugging (network / server response)
+            console.error('registerUser error:', e)
+            let errorMessage = "Registration failed"
+            
+            if (e.response) {
+                console.error('server response:', e.response.status, e.response.data)
+                // Get backend message if available
+                errorMessage = e.response.data?.message || e.response.data?.error || "Registration failed. Please check your information."
+                alert(errorMessage) // Show alert for user feedback
+            } else if (e.request) {
+                console.error('no response received:', e.request)
+                errorMessage = "No response from server. Please check your connection."
+            } else {
+                errorMessage = e.message || "An error occurred during registration"
+            }
+            
+            dispatch(setError(errorMessage))
+            dispatch(setStatus(STATUSES.ERROR))
+            return { success: false, error: errorMessage }
         }
-        dispatch(setStatus(STATUSES.ERROR))
     }
-
-}
 }
 
 
@@ -86,12 +109,22 @@ export function loginUser(data){
     return async function loginUserThunk(dispatch){
         dispatch(setStatus(STATUSES.LOADING))
         dispatch(clearError())
+        
+        // Validate input
+        if (!data.email || !data.password) {
+            const errorMessage = "Email and password are required"
+            dispatch(setError(errorMessage))
+            dispatch(setStatus(STATUSES.ERROR))
+            return { success: false, error: errorMessage }
+        }
+        
         try {
-            const response = await API.post("/auth/login",data)
+            const response = await API.post("/auth/login", data)
             
-            if(response.status === 200 && response.data.token){
+            // Check if response is successful and has token
+            if(response && response.status === 200 && response.data && response.data.token){
                 // Store token in localStorage
-                localStorage.setItem('token',response.data.token)
+                localStorage.setItem('token', response.data.token)
                 
                 // Update Redux state
                 dispatch(setUser(response.data.data))
@@ -100,19 +133,28 @@ export function loginUser(data){
                 
                 // Return success for component to handle navigation
                 return { success: true, data: response.data }
+            } else {
+                // Response doesn't have token
+                const errorMessage = response.data?.message || "Login failed. Invalid response from server."
+                dispatch(setError(errorMessage))
+                dispatch(setStatus(STATUSES.ERROR))
+                return { success: false, error: errorMessage }
             }
         } catch (error) {
             console.error('Login error:', error)
             let errorMessage = "Something went wrong"
             
             if (error.response) {
-                // Server responded with error
-                errorMessage = error.response.data?.message || error.response.data?.error || "Login failed"
+                // Server responded with error (401, 400, etc.)
+                errorMessage = error.response.data?.message || error.response.data?.error || "Login failed. Please check your credentials."
                 console.error('Server error:', error.response.status, error.response.data)
             } else if (error.request) {
                 // Request made but no response
                 errorMessage = "No response from server. Please check your connection."
                 console.error('No response:', error.request)
+            } else {
+                // Error setting up request
+                errorMessage = error.message || "An error occurred during login"
             }
             
             dispatch(setError(errorMessage))

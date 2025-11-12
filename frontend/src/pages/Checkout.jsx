@@ -1,12 +1,60 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchCartItems, emptyCart } from '../store/cartSlice'
+import { createOrder, fetchOrder } from '../store/checkOutSlice'
+import { initiateKhaltiPayment, verifyKhaltiPayment } from '../store/paymentSlice'
+import { STATUSES } from '../statues/statuses'
 
 const Checkout = () => {
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { items: cartItems, status: cartStatus } = useSelector((state) => state.cart)
+  const { status: checkoutStatus } = useSelector((state) => state.checkout)
+  const { paymentUrl, status: paymentStatus } = useSelector((state) => state.payment)
+  const { isAuthenticated } = useSelector((state) => state.auth)
+
+  // Get payment method from navigation state or default to COD
+  const paymentMethodFromState = location.state?.paymentMethod || 'COD'
+
   const [formData, setFormData] = useState({
     shippingAddress: '',
     phoneNumber: '',
-    paymentMethod: 'COD',
+    paymentMethod: paymentMethodFromState,
   })
+
+  // Fetch cart items on component mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchCartItems())
+    } else {
+      navigate('/login')
+    }
+  }, [dispatch, isAuthenticated, navigate])
+
+  // Handle payment URL redirect for Khalti
+  useEffect(() => {
+    if (paymentUrl && formData.paymentMethod === 'khalti') {
+      // Redirect to Khalti payment page
+      window.location.href = paymentUrl
+    }
+  }, [paymentUrl, formData.paymentMethod])
+
+  // Navigate to orders page after successful COD order creation
+  useEffect(() => {
+    if (checkoutStatus === STATUSES.SUCCESS && formData.paymentMethod === 'COD') {
+      // Small delay to ensure backend has saved the order
+      const timer = setTimeout(() => {
+        // Fetch orders before navigating to ensure they're available
+        dispatch(fetchOrder())
+        dispatch(emptyCart())
+        navigate('/orders')
+      }, 500) // 500ms delay to ensure backend has saved
+      
+      return () => clearTimeout(timer)
+    }
+  }, [checkoutStatus, navigate, dispatch, formData.paymentMethod])
 
   const handleChange = (e) => {
     setFormData({
@@ -15,14 +63,86 @@ const Checkout = () => {
     })
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Logic will be added here
+    
+    if (cartItems.length === 0) {
+      alert('Your cart is empty. Please add items to cart first.')
+      navigate('/products')
+      return
+    }
+
+    if (!formData.shippingAddress || !formData.phoneNumber) {
+      alert('Please fill in all required fields')
+      return
+    }
+
+    // Prepare order data
+    const items = cartItems.map(item => ({
+      product: item.product._id,
+      quantity: item.quantity
+    }))
+
+    const subtotal = cartItems.reduce(
+      (total, item) => total + (item.product?.productPrice || 0) * item.quantity,
+      0
+    )
+    const shipping = subtotal > 50 ? 0 : 5.99
+    const tax = subtotal * 0.1
+    const totalAmount = subtotal + shipping + tax
+
+    const orderData = {
+      shippingAddress: formData.shippingAddress,
+      phoneNumber: formData.phoneNumber,
+      items: items,
+      totalAmount: totalAmount,
+      orderStatus: 'pending', // Explicitly set order status to pending for COD
+      paymentDetails: {
+        method: formData.paymentMethod,
+        status: formData.paymentMethod === 'COD' ? 'pending' : 'pending'
+      }
+    }
+
+    // Create order first
+    try {
+      const orderResult = await dispatch(createOrder(orderData))
+      
+      // Check if order was created successfully
+      if (orderResult && orderResult.type === 'checkout/createOrder/fulfilled') {
+        if (formData.paymentMethod === 'COD') {
+          // For COD, the useEffect will handle navigation when status becomes SUCCESS
+          // Don't navigate here - let useEffect handle it after order is saved
+          dispatch(emptyCart())
+        } else if (formData.paymentMethod === 'khalti') {
+          // For Khalti, initiate payment
+          const orderId = orderResult.payload?._id
+          if (orderId) {
+            const paymentResult = await dispatch(initiateKhaltiPayment(orderId, totalAmount))
+            if (!paymentResult || !paymentResult.success) {
+              alert(paymentResult?.error || 'Failed to initiate payment')
+            }
+            // Payment URL will be handled by useEffect
+          } else {
+            alert('Order created but could not get order ID. Please try again.')
+          }
+        }
+      } else {
+        alert('Failed to create order. Please check console for details.')
+        console.error('Order creation failed:', orderResult)
+      }
+    } catch (error) {
+      console.error('Order creation error:', error)
+      alert('An error occurred while creating the order. Please try again.')
+    }
   }
 
-  const subtotal = 99.97
-  const shipping = 5.99
-  const tax = 9.99
+  // Calculate totals from cart
+  const subtotal = cartItems.reduce(
+    (total, item) => total + (item.product?.productPrice || 0) * item.quantity,
+    0
+  )
+  const shipping = subtotal > 50 ? 0 : 5.99
+  const tax = subtotal * 0.1
   const total = subtotal + shipping + tax
 
   return (
@@ -83,33 +203,57 @@ const Checkout = () => {
               Payment Method
             </h2>
             <div className="space-y-4">
-              <div className="flex items-center space-x-4">
-                <input
-                  type="radio"
-                  id="COD"
-                  name="paymentMethod"
-                  value="COD"
-                  checked={formData.paymentMethod === 'COD'}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500"
-                />
-                <label htmlFor="COD" className="text-gray-700 font-medium">
-                  Cash on Delivery (COD)
-                </label>
+              <div className={`p-4 rounded-lg border-2 ${
+                formData.paymentMethod === 'COD' 
+                  ? 'border-primary-600 bg-primary-50' 
+                  : 'border-gray-200'
+              }`}>
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="radio"
+                    id="COD"
+                    name="paymentMethod"
+                    value="COD"
+                    checked={formData.paymentMethod === 'COD'}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                    disabled
+                  />
+                  <label htmlFor="COD" className="text-gray-700 font-medium">
+                    Cash on Delivery (COD)
+                  </label>
+                </div>
+                {formData.paymentMethod === 'COD' && (
+                  <p className="mt-2 text-sm text-gray-600 ml-6">
+                    You will pay when you receive your order
+                  </p>
+                )}
               </div>
-              <div className="flex items-center space-x-4">
-                <input
-                  type="radio"
-                  id="khalti"
-                  name="paymentMethod"
-                  value="khalti"
-                  checked={formData.paymentMethod === 'khalti'}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500"
-                />
-                <label htmlFor="khalti" className="text-gray-700 font-medium">
-                  Khalti
-                </label>
+              <div className={`p-4 rounded-lg border-2 ${
+                formData.paymentMethod === 'khalti' 
+                  ? 'border-primary-600 bg-primary-50' 
+                  : 'border-gray-200'
+              }`}>
+                <div className="flex items-center space-x-4">
+                  <input
+                    type="radio"
+                    id="khalti"
+                    name="paymentMethod"
+                    value="khalti"
+                    checked={formData.paymentMethod === 'khalti'}
+                    onChange={handleChange}
+                    className="h-4 w-4 text-primary-600 focus:ring-primary-500"
+                    disabled
+                  />
+                  <label htmlFor="khalti" className="text-gray-700 font-medium">
+                    Khalti Payment
+                  </label>
+                </div>
+                {formData.paymentMethod === 'khalti' && (
+                  <p className="mt-2 text-sm text-gray-600 ml-6">
+                    You will be redirected to Khalti payment gateway after placing order
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -122,65 +266,59 @@ const Checkout = () => {
               Order Summary
             </h2>
             <div className="space-y-4 mb-6">
-              {/* Sample Order Items */}
-              <div className="flex items-center space-x-4">
-                <img
-                  src="https://via.placeholder.com/80x80"
-                  alt="Product"
-                  className="w-20 h-20 object-cover rounded-md"
-                />
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">
-                    Classic White T-Shirt
-                  </h4>
-                  <p className="text-sm text-gray-500">Qty: 2</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    $59.98
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-4">
-                <img
-                  src="https://via.placeholder.com/80x80"
-                  alt="Product"
-                  className="w-20 h-20 object-cover rounded-md"
-                />
-                <div className="flex-1">
-                  <h4 className="font-medium text-gray-900">
-                    Black Premium Tee
-                  </h4>
-                  <p className="text-sm text-gray-500">Qty: 1</p>
-                  <p className="text-sm font-semibold text-gray-900">
-                    $34.99
-                  </p>
-                </div>
-              </div>
+              {cartItems.length === 0 ? (
+                <p className="text-gray-500 text-center py-4">No items in cart</p>
+              ) : (
+                cartItems.map((item) => (
+                  <div key={item.product?._id} className="flex items-center space-x-4">
+                    <img
+                      src={item.product?.productImage || 'https://via.placeholder.com/80x80'}
+                      alt={item.product?.productName || 'Product'}
+                      className="w-20 h-20 object-cover rounded-md"
+                    />
+                    <div className="flex-1">
+                      <h4 className="font-medium text-gray-900">
+                        {item.product?.productName || 'Product Name'}
+                      </h4>
+                      <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
+                      <p className="text-sm font-semibold text-gray-900">
+                        RS. {((item.product?.productPrice || 0) * item.quantity).toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
             <div className="border-t border-gray-200 pt-4 space-y-3">
               <div className="flex justify-between text-gray-600">
                 <span>Subtotal</span>
-                <span>${subtotal.toFixed(2)}</span>
+                <span>RS. {subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Shipping</span>
-                <span>${shipping.toFixed(2)}</span>
+                <span>{shipping === 0 ? 'Free' : `RS. ${shipping.toFixed(2)}`}</span>
               </div>
               <div className="flex justify-between text-gray-600">
                 <span>Tax</span>
-                <span>${tax.toFixed(2)}</span>
+                <span>RS. {tax.toFixed(2)}</span>
               </div>
               <div className="border-t border-gray-200 pt-3">
                 <div className="flex justify-between text-lg font-bold text-gray-900">
                   <span>Total</span>
-                  <span>${total.toFixed(2)}</span>
+                  <span>RS. {total.toFixed(2)}</span>
                 </div>
               </div>
             </div>
             <button
               onClick={handleSubmit}
-              className="mt-6 w-full bg-primary-600 text-white py-3 rounded-md hover:bg-primary-700 transition-colors font-semibold text-lg"
+              disabled={checkoutStatus === STATUSES.LOADING || paymentStatus === STATUSES.LOADING || cartItems.length === 0}
+              className="mt-6 w-full bg-primary-600 text-white py-3 rounded-md hover:bg-primary-700 transition-colors font-semibold text-lg disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Place Order
+              {checkoutStatus === STATUSES.LOADING || paymentStatus === STATUSES.LOADING 
+                ? (formData.paymentMethod === 'khalti' ? 'Initiating Payment...' : 'Placing Order...') 
+                : formData.paymentMethod === 'khalti' 
+                  ? 'Place Order & Pay with Khalti' 
+                  : 'Place Order (COD)'}
             </button>
             <Link
               to="/cart"

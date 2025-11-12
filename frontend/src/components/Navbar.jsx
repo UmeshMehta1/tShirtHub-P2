@@ -1,20 +1,30 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
-import {useSelector, useDispatch} from "react-redux"
-import {logOut} from "../store/authSlice"
+import React, { useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useSelector, useDispatch } from "react-redux"
+import { logOut } from "../store/authSlice"
+import { fetchCartItems } from "../store/cartSlice"
+
 const Navbar = () => {
   const dispatch = useDispatch()
-  // Sample state for UI display (students will replace with Redux)
-  // const [isAuthenticated, setIsAuthenticated] = useState(false) // Change to true to see logged in state
-  const [cartItemCount, setCartItemCount] = useState(0) // Sample cart count
-  const [userName, setUserName] = useState('User') // Sample username
+  const navigate = useNavigate()
+  const { isAuthenticated, data: userData } = useSelector((state) => state.auth)
+  const { items: cartItems } = useSelector((state) => state.cart)
 
+  // Fetch cart items when user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchCartItems())
+    }
+  }, [dispatch, isAuthenticated])
 
-  const {isAuthenticated}=useSelector((state)=>state.auth)
+  // Calculate cart item count from Redux
+  const cartItemCount = isAuthenticated && cartItems ? cartItems.length : 0
+  const userName = userData?.username || userData?.email || 'User'
 
-  // Handle logout - students will implement with Redux
+  // Handle logout
   const handleLogout = () => {
     dispatch(logOut())
+    navigate('/')
   }
 
   return (

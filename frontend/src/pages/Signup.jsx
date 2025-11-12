@@ -1,24 +1,32 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
-import {useDispatch, useSelector} from "react-redux"
-import { registerUser } from '../store/authSlice'
+import { Link, useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { registerUser, clearError } from '../store/authSlice'
 import { STATUSES } from '../statues/statuses'
 
-
-import {useNavigate} from 'react-router-dom'
-
 const Signup = () => {
-  
-  const dispatch = useDispatch()
   const navigate = useNavigate()
-  const {status}= useSelector((state)=>state.auth)
-
+  const dispatch = useDispatch()
+  const { status, error } = useSelector((state) => state.auth)
+  
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     userNumber: '',
     password: '',
   })
+
+  // Clear error when component mounts
+  useEffect(() => {
+    dispatch(clearError())
+  }, [dispatch])
+
+  // Navigate to login after successful registration
+  useEffect(() => {
+    if (status === STATUSES.SUCCESS) {
+      navigate('/login')
+    }
+  }, [status, navigate])
 
   const handleChange = (e) => {
     setFormData({
@@ -27,9 +35,10 @@ const Signup = () => {
     })
   }
 
-  const handleSubmit = (e) => {
+  // Handle submit
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    // Logic will be added here
+    
     // Basic client-side validation: ensure phone number has at least 10 digits
     const digits = (formData.userNumber || '').toString().replace(/\D/g, '')
     if (digits.length < 10) {
@@ -37,18 +46,37 @@ const Signup = () => {
       return
     }
 
-    dispatch(registerUser(formData))
-  }
-
-  // react to async register status changes
-  useEffect(() => {
-    if (status === STATUSES.SUCCESS) {
-      alert("register successfully")
-      navigate('/login')
-    } else if (status === STATUSES.ERROR) {
-      alert('Something went wrong')
+    // Validate all fields
+    if (!formData.username || !formData.email || !formData.userNumber || !formData.password) {
+      alert('Please fill in all fields')
+      return
     }
-  }, [status, navigate])
+
+    // Validate password length
+    if (formData.password.length < 6) {
+      alert('Password must be at least 6 characters long')
+      return
+    }
+
+    // Dispatch registerUser action
+    try {
+      const result = await dispatch(registerUser(formData))
+      
+      // Check if registration was successful
+      if (result && result.success) {
+        // Navigation will be handled by useEffect when status becomes SUCCESS
+        // Success message is handled by backend response
+      } else {
+        // Registration failed - error is already set in Redux state and shown via alert
+        const errorMessage = result?.error || error || 'Registration failed. Please try again.'
+        // Alert is already shown in the Redux slice, but we can log it here
+        console.error('Registration failed:', errorMessage)
+      }
+    } catch (error) {
+      console.error('Registration error:', error)
+      alert('An error occurred during registration. Please try again.')
+    }
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -67,6 +95,14 @@ const Signup = () => {
             </Link>
           </p>
         </div>
+
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
+            {error}
+          </div>
+        )}
+
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm space-y-4">
             <div>
@@ -157,9 +193,10 @@ const Signup = () => {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+              disabled={status === STATUSES.LOADING}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Create Account
+              {status === STATUSES.LOADING ? 'Creating Account...' : 'Create Account'}
             </button>
           </div>
         </form>

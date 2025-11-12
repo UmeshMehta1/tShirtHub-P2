@@ -1,54 +1,88 @@
-import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useDispatch, useSelector } from 'react-redux'
+import { fetchCartItems, updateCartItem, deleteCartItem, updateItems, deleteItem } from '../store/cartSlice'
+import { STATUSES } from '../statues/statuses'
 
 const Cart = () => {
-  // Sample cart items for UI display (students will replace this with Redux/API)
-  const [cartItems, setCartItems] = useState([
-    {
-      product: {
-        _id: '1',
-        productName: 'Classic White T-Shirt',
-        productPrice: 29.99,
-        productImage: 'https://via.placeholder.com/150x150',
-      },
-      quantity: 2,
-    },
-    {
-      product: {
-        _id: '2',
-        productName: 'Black Premium Tee',
-        productPrice: 34.99,
-        productImage: 'https://via.placeholder.com/150x150',
-      },
-      quantity: 1,
-    },
-  ])
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+  const { items: cartItems, status } = useSelector((state) => state.cart)
+  const { isAuthenticated } = useSelector((state) => state.auth)
+
+  // Fetch cart items on component mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      dispatch(fetchCartItems())
+    } else {
+      navigate('/login')
+    }
+  }, [dispatch, isAuthenticated, navigate])
 
   // Calculate totals
   const subtotal = cartItems.reduce(
     (total, item) => total + (item.product?.productPrice || 0) * item.quantity,
     0
   )
-  const shipping = 5.99
+  
+  const shipping = subtotal > 50 ? 0 : 5.99
   const tax = subtotal * 0.1
   const total = subtotal + shipping + tax
 
-  // Handler functions - students will implement these with Redux/API
-  const handleQuantityChange = (productId, newQuantity) => {
-    // Logic will be added here by students
-    console.log('Update quantity:', productId, newQuantity)
+  // Handler functions
+  const handleQuantityChange = async (productId, newQuantity) => {
+    if (newQuantity < 1) {
+      return
+    }
+    
+    // Update optimistically in Redux first for instant UI feedback
+    dispatch(updateItems({ productId, quantity: newQuantity }))
+    
+    // Then sync with backend silently in the background
+    try {
+      const result = await dispatch(updateCartItem(productId, newQuantity))
+      // If update fails, fetch to get correct state from backend
+      if (result && !result.success) {
+        dispatch(fetchCartItems())
+      }
+    } catch (error) {
+      console.error('Failed to update quantity:', error)
+      // If update fails, fetch to get correct state from backend
+      dispatch(fetchCartItems())
+    }
   }
 
-  const handleDelete = (productId) => {
-    // Logic will be added here by students
-    console.log('Delete product:', productId)
+  const handleDelete = async (productId) => {
+    if (window.confirm('Are you sure you want to remove this item from cart?')) {
+      // Remove optimistically from Redux first for instant UI feedback
+      dispatch(deleteItem({ productId }))
+      
+      // Then sync with backend silently in the background
+      try {
+        const result = await dispatch(deleteCartItem(productId))
+        // If delete fails, fetch to get correct state from backend
+        if (result && !result.success) {
+          dispatch(fetchCartItems())
+        }
+      } catch (error) {
+        console.error('Failed to delete item:', error)
+        // If delete fails, fetch to get correct state from backend
+        dispatch(fetchCartItems())
+      }
+    }
   }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Shopping Cart</h1>
 
-      {cartItems.length === 0 ? (
+      {/* Only show loading on initial fetch, not on updates/deletes */}
+      {status === STATUSES.LOADING && cartItems.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+          <p className="mt-4 text-gray-600">Loading cart items...</p>
+        </div>
+      ) : cartItems.length === 0 ? (
         <div className="text-center py-12">
           <svg
             className="mx-auto h-24 w-24 text-gray-400"
@@ -96,12 +130,18 @@ const Cart = () => {
                             {item.product?.productName || 'Product Name'}
                           </h3>
                           <p className="mt-1 text-sm text-gray-500">
-                            Price: ${item.product?.productPrice || 0}
+                            Price: RS. {item.product?.productPrice || 0}
                           </p>
                         </div>
                         <button 
-                          onClick={() => handleDelete(item.product?._id)} 
-                          className="text-red-600 hover:text-red-800"
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleDelete(item.product?._id)
+                          }}
+                          className="text-red-600 hover:text-red-800 hover:bg-red-50 p-1 rounded transition-colors"
+                          aria-label="Delete item"
                         >
                           <svg
                             className="h-6 w-6"
@@ -121,23 +161,36 @@ const Cart = () => {
                       <div className="mt-4 flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <button 
-                            className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50" 
-                            onClick={() => handleQuantityChange(item.product?._id, item.quantity - 1)}
+                            type="button"
+                            className="px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors font-medium min-w-[36px] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-white" 
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              if (item.quantity > 1) {
+                                handleQuantityChange(item.product?._id, item.quantity - 1)
+                              }
+                            }}
+                            disabled={item.quantity <= 1}
                           >
                             -
                           </button>
-                          <span className="text-lg font-medium">
+                          <span className="text-lg font-medium min-w-[30px] text-center">
                             {item.quantity}
                           </span>
                           <button 
-                            className="px-3 py-1 border border-gray-300 rounded-md hover:bg-gray-50"
-                            onClick={() => handleQuantityChange(item.product?._id, item.quantity + 1)}
+                            type="button"
+                            className="px-3 py-1.5 border border-gray-300 rounded-md hover:bg-gray-50 active:bg-gray-100 transition-colors font-medium min-w-[36px]"
+                            onClick={(e) => {
+                              e.preventDefault()
+                              e.stopPropagation()
+                              handleQuantityChange(item.product?._id, item.quantity + 1)
+                            }}
                           >
                             +
                           </button>
                         </div>
                         <div className="text-lg font-semibold text-gray-900">
-                          ${((item.product?.productPrice || 0) * item.quantity).toFixed(2)}
+                          RS. {((item.product?.productPrice || 0) * item.quantity).toFixed(2)}
                         </div>
                       </div>
                     </div>
@@ -164,31 +217,31 @@ const Cart = () => {
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>${subtotal.toFixed(2)}</span>
+                  <span>RS. {subtotal.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
-                  <span>${shipping.toFixed(2)}</span>
+                  <span>{shipping === 0 ? 'Free' : `RS. ${shipping.toFixed(2)}`}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Tax</span>
-                  <span>${tax.toFixed(2)}</span>
+                  <span>RS. {tax.toFixed(2)}</span>
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between text-lg font-bold text-gray-900">
                     <span>Total</span>
-                    <span>${total.toFixed(2)}</span>
+                    <span>RS. {total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
               <Link
-                to="/checkout"
+                to="/payment"
                 className="block w-full bg-primary-600 text-white text-center py-3 rounded-md hover:bg-primary-700 transition-colors font-semibold"
               >
-                Proceed to Checkout
+                Proceed to Payment
               </Link>
               <p className="mt-4 text-sm text-gray-500 text-center">
-                Free shipping on orders over $50
+                Free shipping on orders over RS. 50
               </p>
             </div>
           </div>

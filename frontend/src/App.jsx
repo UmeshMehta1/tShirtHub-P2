@@ -9,6 +9,8 @@ import Cart from './pages/Cart'
 import Login from './pages/Login'
 import Signup from './pages/Signup'
 import Checkout from './pages/Checkout'
+import Payment from './pages/Payment'
+import PaymentSuccess from './pages/PaymentSuccess'
 import Review from './pages/Review'
 import Orders from './pages/Orders'
 import AllOrders from './pages/AllOrders'
@@ -33,7 +35,9 @@ function App() {
             <Route path="/cart" element={<Cart />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/payment" element={<Payment />} />
             <Route path="/checkout" element={<Checkout />} />
+            <Route path="/success" element={<PaymentSuccess />} />
             <Route path="/review/:id" element={<Review />} />
             <Route path="/orders" element={<Orders />} />
             <Route path="/all-orders" element={<AllOrders />} />

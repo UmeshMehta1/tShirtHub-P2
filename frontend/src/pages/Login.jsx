@@ -1,7 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from "react-router-dom"
 import {useDispatch, useSelector} from "react-redux"
-import { loginUser } from '../store/authSlice'
+import { loginUser, clearError } from '../store/authSlice'
+import { STATUSES } from '../statues/statuses'
 
 const Login = () => {
   const navigate = useNavigate()
@@ -18,18 +19,45 @@ const Login = () => {
     })
   }
 
-  const {token, status, isAuthenticated}= useSelector((state)=>state.auth)
+  const {token, status, isAuthenticated, error}= useSelector((state)=>state.auth)
 
+  // Clear error when component mounts
+  useEffect(() => {
+    dispatch(clearError())
+  }, [dispatch])
 
-  // Handle submit - students will implement with Redux/API
+  // Navigate to home after successful login
+  useEffect(() => {
+    if (isAuthenticated && token && status === STATUSES.SUCCESS) {
+      navigate("/")
+    }
+  }, [isAuthenticated, token, status, navigate])
+
+  // Handle submit
   const handleSubmit = async (e) => {
     e.preventDefault()
-    try{
-        await dispatch(loginUser(formData))
-        alert("login successfully")
-        navigate("/")
-    }catch(error){
-      console.error("login error", error)
+    
+    // Validate form
+    if (!formData.email || !formData.password) {
+      alert('Please fill in all fields')
+      return
+    }
+
+    try {
+      const result = await dispatch(loginUser(formData))
+      
+      // Check if login was successful
+      if (result && result.success) {
+        // Navigation will be handled by useEffect when isAuthenticated becomes true
+        // Don't show alert here, let the navigation happen naturally
+      } else {
+        // Login failed - error is already set in Redux state
+        const errorMessage = result?.error || error || 'Login failed. Please check your credentials.'
+        alert(errorMessage)
+      }
+    } catch (error) {
+      console.error("Login error:", error)
+      alert('An error occurred during login. Please try again.')
     }
   }
   
@@ -51,12 +79,12 @@ const Login = () => {
           </p>
         </div>
 
-        {/* Error Message - students will implement with Redux state */}
-        {/* {error && (
+        {/* Error Message */}
+        {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
             {error}
           </div>
-        )} */}
+        )}
 
         <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
           <div className="rounded-md shadow-sm -space-y-px">
@@ -123,10 +151,10 @@ const Login = () => {
           <div>
             <button
               type="submit"
-           
+              disabled={status === STATUSES.LOADING}
               className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-            Sign in
+              {status === STATUSES.LOADING ? 'Signing in...' : 'Sign in'}
             </button>
           </div>
         </form>
