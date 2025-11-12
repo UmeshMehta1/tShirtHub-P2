@@ -22,7 +22,9 @@ app.use(cors(
 app.use(express.json())
 app.use(express.urlencoded())
 
-
+app.get("/",(req,res)=>{
+    res.send("server is live")
+})
 
 // http://localhost:3000/api/auth/register
 
