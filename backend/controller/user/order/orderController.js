@@ -5,7 +5,7 @@ const User = require("../../../model/userModel")
 exports.createOrder = async(req,res)=>{
     const userId= req.user.id
 
-    const {shippingAddress, items, totalAmount, paymentDetails, phoneNumber}= req.body
+    const {shippingAddress, items, totalAmount, paymentDetails, phoneNumber, orderStatus}= req.body
 
     if(!shippingAddress || !totalAmount || !paymentDetails || !phoneNumber){
         return res.status(400).json({
@@ -19,7 +19,8 @@ exports.createOrder = async(req,res)=>{
         totalAmount,
         items,
         paymentDetails,
-        phoneNumber
+        phoneNumber,
+        orderStatus: orderStatus || 'pending' // Explicitly set to pending if not provided
     })
 
 const user = await User.findById(userId);
