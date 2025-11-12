@@ -10,6 +10,8 @@ const adminOrderRoute = require("./routes/adminorderRoute")
 const cors = require("cors")
 require("dotenv").config()
 
+const cron = require("node-cron")
+
 const app = express();
 
 app.use(cors(
@@ -25,6 +27,24 @@ app.use(express.urlencoded())
 app.get("/",(req,res)=>{
     res.send("server is live")
 })
+const callAPI = async () => {
+  try {
+    const response = await axios.get("https://tshirthub-p2.onrender.com/");
+    console.log("API called successfully at", new Date().toLocaleString());
+    console.log("Response:", response.data);
+  } catch (error) {
+    console.error("Error calling API:", error.message);
+  }
+};
+
+// ✅ Schedule: Every 15 minutes
+cron.schedule("*/15 * * * *", () => {
+  console.log("Running API call job...");
+  callAPI();
+});
+
+// Keep process alive
+console.log("Cron job started! API will be hit every 15 minutes.");
 
 // http://localhost:3000/api/auth/register
 
