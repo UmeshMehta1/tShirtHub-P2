@@ -22,7 +22,7 @@ app.use(cors(
 app.use(express.json())
 app.use(express.urlencoded())
 
-app.get("/hello",(req,res)=>{
+app.get("/",(req,res)=>{
     res.send("server is live")
 })
 
