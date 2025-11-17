@@ -15,7 +15,7 @@ const Hero = () => {
                 </span>
               </h1>Everyone
               <p className="mt-3 text-base text-red-100 sm:mt-5 sm:text-lg sm:max-w-xl sm:mx-auto md:mt-5 md:text-xl lg:mx-0">
-                Discover our collection of stylish, comfortable, and affordable
+                 our collection of stylish, comfortable, and affordable
                 t-shirts. Made with premium materials and designed for everyday
                 wear.
               </p>
