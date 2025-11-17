@@ -63,7 +63,6 @@ if(!username || !email || !userNumber || !password ){
 
 exports.loginUser = async(req,res)=>{
     const {email, password} = req.body
-    console.log(email, password)
      
     if(!email || !password){
       return  res.status(400).json({
@@ -86,16 +85,13 @@ exports.loginUser = async(req,res)=>{
             expiresIn:"4534535s"
         })
 
-        res.status(200).json({
-        message:"user logged in successfully",
-        data: userFound,
-        token:token
-    }
-
-
-)
+        return res.status(200).json({
+            message:"user logged in successfully",
+            data: userFound,
+            token:token
+        })
     }else{
-        res.status(400).json({
+        return res.status(400).json({
             message:"Invalid password"
         })
     }
@@ -106,7 +102,7 @@ exports.loginUser = async(req,res)=>{
 
 exports.forgotPassword = async(req, res)=>{
     const {email} = req.body
-     console.log("hello")
+    
     if(!email){
         return res.status(400).json({
             message:"please provide email"
@@ -123,7 +119,6 @@ exports.forgotPassword = async(req, res)=>{
 
 
    const otp = Math.floor(1000+Math.random()*9000)
-   console.log(otp)
 
    userExist[0].otp=otp
    userExist[0].isOtpVerified= false
@@ -136,7 +131,7 @@ exports.forgotPassword = async(req, res)=>{
 
    })
 
-   res.status(200).json({
+   return res.status(200).json({
     message: "OTP send successfully",
    })
     
@@ -166,11 +161,11 @@ exports.verifyOtp = async(req,res)=>{
             message:"Inviled Otp"
         })
     }else{
-        userExists[0].otp = undefined,
-        userExists[0].isOtpVerified= true,
+        userExists[0].otp = undefined
+        userExists[0].isOtpVerified= true
         await userExists[0].save()
 
-        res.status(200).json({
+        return res.status(200).json({
             message:"otp is verify"
         })
     }

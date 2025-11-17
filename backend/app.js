@@ -10,19 +10,24 @@ const adminOrderRoute = require("./routes/adminorderRoute")
 const cors = require("cors")
 require("dotenv").config()
 
+const axios = require('axios')
+
 const cron = require("node-cron")
 
 const app = express();
 
 app.use(cors(
     {
-        origin:"*"
+        origin:["https://t-shirt-hub-p2.vercel.app/","https://t-shirt-hub-p2-j99n.vercel.app/"]
     }
 ))
 
 
 app.use(express.json())
 app.use(express.urlencoded())
+
+// Serve static files from upload directory
+app.use('/upload', express.static('upload'))
 
 app.get("/",(req,res)=>{
     res.send("server is live")

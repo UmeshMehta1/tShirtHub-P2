@@ -19,7 +19,8 @@ const userSchema = new mongoose.Schema({
     },
     productStatus:{
         type:String,
-        enum:["available","unavilable"]
+        enum:["active","inactive"],
+        default:"active"
     },
     qantity:{
         type:Number
@@ -29,6 +30,14 @@ const userSchema = new mongoose.Schema({
 },{
     timestamps:true
 })
+
+// Delete the model from all possible caches to avoid caching issues
+if (mongoose.models.Product) {
+    delete mongoose.models.Product
+}
+if (mongoose.connection && mongoose.connection.models && mongoose.connection.models.Product) {
+    delete mongoose.connection.models.Product
+}
 
 const Product = mongoose.model("Product", userSchema)
 

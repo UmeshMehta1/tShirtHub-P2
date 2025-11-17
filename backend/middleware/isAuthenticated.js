@@ -5,7 +5,6 @@ const User = require("../model/userModel")
 const isAutenticated = async(req, res, next)=>{
     
     const token = req.headers.authorization
-   console.log(token)
 
    if(!token){
        return res.status(403).json({
@@ -13,20 +12,23 @@ const isAutenticated = async(req, res, next)=>{
        })
    }
 
-   const decode = await promisify(jwt.verify)(token,"helloWorld")
+   try {
+       const decode = await promisify(jwt.verify)(token,"helloWorld")
 
-   console.log(decode)
+       const doesUserExist = await User.findOne({_id:decode.id})
 
-   const doesUserExist = await User.findOne({_id:decode.id})
-    console.log(doesUserExist)
-
-    if(!doesUserExist){
-        return res.status(404).json({
-            message:"user doesn't exists with that token"
-        })
-    }
-    req.user = doesUserExist
-    next()
+       if(!doesUserExist){
+           return res.status(404).json({
+               message:"user doesn't exists with that token"
+           })
+       }
+       req.user = doesUserExist
+       next()
+   } catch (error) {
+       return res.status(403).json({
+           message:"Invalid or expired token"
+       })
+   }
 
 } 
 
