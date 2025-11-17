@@ -62,7 +62,7 @@ const ProductCard = ({ product }) => {
       <Link to={`/product/${product?._id || product?.id || 1}`}>
         <div className="relative">
           <img
-            src={product?.productImage || 'https://via.placeholder.com/400x400'}
+            src={product?.productImage ? `http://localhost:3000/upload/${product.productImage}` : 'https://via.placeholder.com/400x400'}
             alt={product?.productName || 'T-Shirt'}
             className="w-full h-64 object-cover"
           />

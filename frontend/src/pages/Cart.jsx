@@ -118,7 +118,7 @@ const Cart = () => {
                   <div key={item.product?._id || item._id} className="p-6 flex flex-col sm:flex-row">
                     <div className="flex-shrink-0">
                       <img
-                        src={item.product?.productImage || 'https://via.placeholder.com/150x150'}
+                        src={item.product?.productImage ? `http://localhost:3000/upload/${item.product.productImage}` : 'https://via.placeholder.com/150x150'}
                         alt={item.product?.productName || 'Product'}
                         className="h-32 w-32 object-cover rounded-md"
                       />

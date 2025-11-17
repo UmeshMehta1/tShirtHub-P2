@@ -6,7 +6,7 @@ const CreateProduct = () => {
     productName: '',
     productDescription: '',
     productPrice: '',
-    productStatus: 'available',
+    productStatus: 'active',
     productStockQty: '',
     productImage: null,
   })
@@ -160,8 +160,8 @@ const CreateProduct = () => {
               className="w-full px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               required
             >
-              <option value="available">Available</option>
-              <option value="unavilable">Unavailable</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
             </select>
           </div>
 

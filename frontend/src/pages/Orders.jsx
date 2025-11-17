@@ -226,7 +226,7 @@ const Orders = () => {
                           className="flex items-center space-x-4"
                         >
                           <img
-                            src={item.product?.productImage || 'https://via.placeholder.com/100x100'}
+                            src={item.product?.productImage ? `http://localhost:3000/upload/${item.product.productImage}` : 'https://via.placeholder.com/100x100'}
                             alt={item.product?.productName || 'Product'}
                             className="w-20 h-20 object-cover rounded-md"
                           />
