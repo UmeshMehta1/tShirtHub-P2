@@ -18,7 +18,7 @@ const app = express();
 
 app.use(cors(
     {
-        origin:["https://t-shirt-hub-p2.vercel.app/","https://t-shirt-hub-p2-j99n.vercel.app/"]
+        origin:"*"
     }
 ))
 
